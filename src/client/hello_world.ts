@@ -64,29 +64,51 @@ const PROGRAM_KEYPAIR_PATH = path.join(PROGRAM_PATH, 'helloworld-keypair.json');
 /**
  * The state of a greeting account managed by the hello world program
  */
-class GreetingAccount {
-  counter = 0;
-  constructor(fields: {counter: number} | undefined = undefined) {
+class FlavourName {
+  name = 'none';
+  constructor(fields: {name: string} | undefined = undefined) {
     if (fields) {
-      this.counter = fields.counter;
+      this.name = fields.name;
     }
   }
 }
 
-/**
- * Borsh schema definition for greeting accounts
- */
-const GreetingSchema = new Map([
-  [GreetingAccount, {kind: 'struct', fields: [['counter', 'u32']]}],
+
+class Flavour {
+  name = new FlavourName();
+  vote_count = 0;
+  id = 1;
+  constructor(fields: {name: FlavourName, vote_count: number, id: number} | undefined = undefined) {
+    if (fields) {
+      this.name = fields.name;
+      this.vote_count = fields.vote_count;
+      this.id = fields.id;
+    }
+  }
+}
+
+
+// state of Flavour Account
+class FlavourAccount {
+  flavours = [new Flavour()];
+  constructor(fields: {flavours: Array<Flavour>} | undefined = undefined) {
+    if (fields) {
+      this.flavours = fields.flavours
+    }
+  }
+}
+
+const FlavourAccountSchema = new Map([
+  [FlavourAccount, {kind: 'struct', fields: [['flavours', 'Vector']]}],
 ]);
 
 /**
  * The expected size of each greeting account.
  */
-const GREETING_SIZE = borsh.serialize(
-  GreetingSchema,
-  new GreetingAccount(),
-).length;
+//  const GREETING_SIZE = borsh.serialize(
+//   FlavourAccountSchema,
+//   new FlavourAccount(),
+// ).length;
 
 /**
  * Establish a connection to the cluster
@@ -107,7 +129,7 @@ export async function establishPayer(): Promise<void> {
     const {feeCalculator} = await connection.getRecentBlockhash();
 
     // Calculate the cost to fund the greeter account
-    fees += await connection.getMinimumBalanceForRentExemption(GREETING_SIZE);
+    fees += await connection.getMinimumBalanceForRentExemption(10000);
 
     // Calculate the cost of sending transactions
     fees += feeCalculator.lamportsPerSignature * 100; // wag
@@ -187,7 +209,7 @@ export async function checkProgram(): Promise<void> {
       'to say hello to',
     );
     const lamports = await connection.getMinimumBalanceForRentExemption(
-      GREETING_SIZE,
+      10000,
     );
 
     const transaction = new Transaction().add(
@@ -197,7 +219,7 @@ export async function checkProgram(): Promise<void> {
         seed: GREETING_SEED,
         newAccountPubkey: greetedPubkey,
         lamports,
-        space: GREETING_SIZE,
+        space: 10000,
         programId,
       }),
     );
@@ -205,15 +227,22 @@ export async function checkProgram(): Promise<void> {
   }
 }
 
+let bytes: any[] = [];
+let flavour_name = 'mango';
+for(var i=0; i< flavour_name.length; i++){
+  bytes.concat([flavour_name.charCodeAt(i)]);
+}
 /**
  * Say hello
  */
-export async function sayHello(): Promise<void> {
+export async function sayHello(flavour: string): Promise<void> {
   console.log('Saying hello to', greetedPubkey.toBase58());
+  let data = new Uint8Array([1].concat(bytes));
+
   const instruction = new TransactionInstruction({
     keys: [{pubkey: greetedPubkey, isSigner: false, isWritable: true}],
     programId,
-    data: Buffer.alloc(0), // All instructions are hellos
+    data: Buffer.from(data), // All instructions are hellos
   });
   await sendAndConfirmTransaction(
     connection,
@@ -230,15 +259,16 @@ export async function reportGreetings(): Promise<void> {
   if (accountInfo === null) {
     throw 'Error: cannot find the greeted account';
   }
-  const greeting = borsh.deserialize(
-    GreetingSchema,
-    GreetingAccount,
-    accountInfo.data,
-  );
-  console.log(
-    greetedPubkey.toBase58(),
-    'has been greeted',
-    greeting.counter,
-    'time(s)',
-  );
+  console.log(accountInfo);
+  // const greeting = borsh.deserialize(
+  //   FlavourNameSchema,
+  //   FlavourName,
+  //   accountInfo.data,
+  // );
+  // console.log(
+  //   greetedPubkey.toBase58(),
+  //   'has been greeted',
+  //   greeting.counter,
+  //   'time(s)',
+  // );
 }
