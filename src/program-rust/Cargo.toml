@@ -11,7 +11,7 @@ entrypoint = []
 [dependencies]
 solana-program = "1.6.1"
 byteorder = "1.3"
-remove_dir_all = "=0.5.0"
+remove_dir_all = "=0.7.0"
 num-traits = "0.2"
 num-derive = "0.3"
 thiserror = "1.0"
