@@ -22,7 +22,7 @@ borsh-derive = "0.9.1"
 rand = { version = "0.7.0"}
 assert_matches = "1.4.0"
 base64 = "0.13.0"
-tokio = { version = "0.3", features = ["macros"]}
+tokio = { version = "1.7", features = ["macros"]}
 solana-program-test = "=1.6.1"
 solana-sdk = "=1.6.1"
 
